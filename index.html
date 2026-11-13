@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Route Chorus</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <header>
+      <a href="/">route chorus<span>NETWORKS / CHANGING BELIEFS</span></a>
+      <div>
+        <button id="open">Open topology</button
+        ><button id="save">Save topology</button
+        ><input id="file" type="file" accept=".json" hidden />
+      </div>
+    </header>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">
+          What a router knows—and what it tells its neighbors
+        </p>
+        <h1>When one link goes quiet,<br />the network keeps talking.</h1>
+        <p>
+          Compare synchronous distance-vector updates after a link failure.
+          Follow changing metrics, poisoned advertisements, and the forwarding
+          paths they create.
+        </p>
+      </section>
+      <div class="settings">
+        <label
+          >Advertisement policy<select id="method">
+            <option value="0">Ordinary distance vector</option>
+            <option value="1">Poisoned reverse</option>
+          </select></label
+        ><label>Failed link<select id="failed"></select></label
+        ><button id="example">Line example</button
+        ><button id="loop-example">Loop example</button>
+      </div>
+      <p id="message" role="status"></p>
+      <div id="metrics" class="metrics"></div>
+      <div class="playback">
+        <button id="back" aria-label="Previous round">←</button
+        ><button id="play">Play</button
+        ><button id="next" aria-label="Next round">→</button
+        ><label
+          >Exchange round<input
+            id="round"
+            type="range"
+            min="0"
+            max="16"
+            value="1" /></label
+        ><span id="position"></span>
+      </div>
+      <section class="network-layout">
+        <div>
+          <svg
+            id="network"
+            viewBox="0 0 700 440"
+            role="group"
+            aria-label="Routing topology; choose a router"
+          ></svg>
+          <p class="caption">
+            Dashed red: failed link. Blue arrows: current next hops. Node labels
+            show distance to the destination; 16 means unreachable.
+          </p>
+        </div>
+        <div>
+          <h2>Follow a packet</h2>
+          <label>Starting router<select id="origin"></select></label>
+          <p id="path" class="path"></p>
+          <p id="path-note"></p>
+          <div class="scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Router</th>
+                  <th>Metric</th>
+                  <th>Next hop</th>
+                </tr>
+              </thead>
+              <tbody id="routes"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <section>
+        <h2>Two policies, one failure</h2>
+        <svg
+          id="timeline"
+          viewBox="0 0 900 230"
+          role="img"
+          aria-label="Metric history for selected router"
+        ></svg>
+        <p class="caption">
+          Blue: ordinary updates. Copper: poisoned reverse. Values after a
+          method settles repeat its final value for comparison. Rounds are
+          logical exchanges, not elapsed seconds.
+        </p>
+      </section>
+      <details>
+        <summary>Advertisements received by the selected router</summary>
+        <p>
+          Each round reads the previous round's table. A poisoned metric is
+          specific to its recipient; it does not change the sender's stored
+          metric.
+        </p>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>From</th>
+                <th>Link cost</th>
+                <th>Advertised</th>
+                <th>Poisoned</th>
+                <th>Candidate</th>
+              </tr>
+            </thead>
+            <tbody id="ads"></tbody>
+          </table>
+        </div>
+      </details>
+      <details>
+        <summary>Edit topology</summary>
+        <label
+          >Topology JSON<textarea
+            id="editor"
+            rows="12"
+            spellcheck="false"
+          ></textarea></label
+        ><button id="apply">Apply topology</button>
+        <p>
+          2–8 routers, at most 28 undirected links, integer costs 1–9, and one
+          failed link or null. Ties choose the first neighboring node in the
+          nodes array.
+        </p>
+      </details>
+      <div class="exports">
+        <button id="evidence" disabled>Export evidence</button
+        ><button id="csv" disabled>Export routing CSV</button>
+      </div>
+      <details>
+        <summary>A model of routing, not a RIP implementation</summary>
+        <p>
+          The model first converges on the intact topology, removes one link,
+          then performs synchronous full-vector exchanges for a single
+          destination. Round zero still contains the pre-failure tables, so a
+          next hop may point across the failed link. Each following round
+          recomputes all choices from the previous round's advertisements.
+        </p>
+        <p>
+          Metric 16 is the unreachable cap. There are no packet timers,
+          asynchronous delivery, triggered updates, route aging, hold-downs,
+          authentication, or actual network traffic. Poisoned reverse is not a
+          universal loop-prevention guarantee; the loop example shows
+          three-router circular forwarding. Simultaneous route changes can also
+          produce transient two-router loops from earlier advertisements in this
+          model.
+        </p>
+      </details>
+    </main>
+    <footer>Convergence is a conversation, not a command.</footer>
+  </body>
+</html>
