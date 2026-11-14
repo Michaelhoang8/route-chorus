@@ -4,6 +4,8 @@ A distance-vector routing workbench comparing ordinary advertisements with poiso
 
 ![Line failure and count-to-infinity](docs/workbench.png)
 
+The topology uses animated directional dashes for current next-hop choices, distinct unreachable routers, and a chip-based forwarding path. The convergence cursor moves without rebuilding its history, router selection preserves keyboard focus, and reduced-motion settings stop the effects. The animation represents routing choices, not live packet traffic.
+
 ## Run
 
 ```sh

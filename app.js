@@ -48,7 +48,16 @@ function change(next) {
     message(error.message, true);
   }
 }
+let drawnFrame, drawnTimelineResult, drawnOrigin;
 function network(frame) {
+  if (drawnFrame === frame) {
+    for (const n of $("network").querySelectorAll(".node")) {
+      n.classList.toggle("selected", n.dataset.router === origin);
+      n.setAttribute("aria-pressed", String(n.dataset.router === origin));
+    }
+    return;
+  }
+  drawnFrame = frame;
   const s = $("network"),
     coords = Object.fromEntries(
       model.nodes.map((n, i) => {
@@ -113,6 +122,7 @@ function network(frame) {
         y1: a[1] + (dy / len) * 33 + oy,
         x2: b[0] - (dx / len) * 36 + ox,
         y2: b[1] - (dy / len) * 36 + oy,
+        class: "forwarding-arrow",
         stroke: "#446c96",
         "stroke-width": 2,
         "marker-end": "url(#arrow)",
@@ -122,7 +132,13 @@ function network(frame) {
   for (const r of frame.routes) {
     const [x, y] = coords[r.node],
       g = svg("g", {
-        class: "node" + (r.node === origin ? " selected" : ""),
+        class:
+          "node" +
+          (r.node === origin ? " selected" : "") +
+          (r.metric === 16 ? " unreachable" : "") +
+          (r.node === model.destination ? " destination" : ""),
+        "data-router": r.node,
+        "aria-pressed": String(r.node === origin),
         role: "button",
         tabindex: 0,
         "aria-label": `Router ${r.node}, metric ${r.metric}${r.node === model.destination ? ", destination" : ""}`,
@@ -152,9 +168,16 @@ function network(frame) {
 }
 function timeline() {
   const s = $("timeline"),
-    max = Math.max(...result.runs.map((r) => r.settledRound)),
+    max = Math.max(1, ...result.runs.map((r) => r.settledRound)),
     xp = (r) => 55 + (r / max) * 800,
     yp = (m) => 185 - (m / 16) * 155;
+  if (drawnTimelineResult === result && drawnOrigin === origin) {
+    s.querySelector(".round-cursor").style.transform =
+      `translateX(${xp(round)}px)`;
+    return;
+  }
+  drawnTimelineResult = result;
+  drawnOrigin = origin;
   s.replaceChildren();
   for (const value of [0, 4, 8, 12, 16])
     s.append(
@@ -191,14 +214,17 @@ function timeline() {
   });
   s.append(
     svg("line", {
-      x1: xp(round),
-      x2: xp(round),
+      x1: 0,
+      x2: 0,
+      class: "round-cursor",
       y1: 22,
       y2: 185,
       stroke: "#8999ad",
       "stroke-dasharray": "4 4",
     }),
   );
+  s.querySelector(".round-cursor").style.transform =
+    `translateX(${xp(round)}px)`;
 }
 function render() {
   if (!ready || !result) return;
@@ -259,7 +285,14 @@ function render() {
       return p;
     }),
   );
-  $("path").textContent = path.path.join(" → ");
+  $("path").replaceChildren(
+    ...path.path.map((name, i) => {
+      const chip = el("span", name);
+      chip.className = "hop";
+      if (i === path.path.length - 1) chip.classList.add(path.status);
+      return chip;
+    }),
+  );
   $("path-note").textContent =
     path.status === "delivered"
       ? `Delivered to ${model.destination}; actual path cost ${path.cost}.`
